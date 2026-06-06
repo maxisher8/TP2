@@ -4,14 +4,15 @@
 #include <stdlib.h>
 #include "oponente.h"
 
+#define MAX_FILAS 10
+#define MAX_COLUMNAS 10
+
 const int EXITO = 0;
 const int ERROR_LECTURA = 1;
 const int ERROR_ESCRITURA = 2;
 const int ERROR_ABRIR_ARCHIVO = 3;
 const int ERROR_ARGUMENTOS = 4;
-#define MAX_FILAS 10
-#define MAX_COLUMNAS 10
-const char AGUA = 'A';
+const char AGUA = ' ';
 const char TOCADO = 'T';
 const char HUNDIDO = 'H';
 const char BARCO = 'B';
@@ -19,17 +20,7 @@ const char NORTE = 'N';
 const char SUR = 'S';
 const char ESTE = 'E';
 const char OESTE = 'O';
-const char FORMATO_LECTURA[] = "<%d>;<%d>;<%c>;<%d>\n";
-
-void imprimir_instrucciones() {
-    printf("Bienvenido a Batalla Naval!\n");
-    printf("Instrucciones:\n");
-    printf("1. El juego se juega en un tablero de 10x10.\n");
-    printf("2. Cada jugador tiene 5 barcos de diferentes tamaños.\n");
-    printf("3. El objetivo es hundir todos los barcos del oponente.\n");
-    printf("4. Para disparar, ingresa las coordenadas (fila y columna).\n");
-    printf("5. El juego termina cuando un jugador hunde todos los barcos del oponente.\n");
-}
+const char FORMATO_LECTURA[] =  "%d;%d;%c;%d";
 
 typedef struct juego
 {
@@ -86,50 +77,42 @@ bool son_posiciones_iguales(coordenada_t pos1, coordenada_t pos2)
 
 void mostrar_tableros(juego_t *juego)
 {
-    int i, j;
-
-    // Column headers for both boards (1..10)
-    printf("    ");
-    for (j = 1; j <= MAX_COLUMNAS; j++)
-        printf("%2d ", j);
-    printf("    "); // separación entre tableros
-    for (j = 1; j <= MAX_COLUMNAS; j++)
-        printf("%2d ", j);
-    printf("\n");
-
-    // Rows: índice a la izquierda de cada tablero, tablero aliado a la izquierda y enemigo a la derecha
-    for (i = 0; i < MAX_FILAS; i++)
+    printf("\n==== TU TABLERO (DEFENSA) ====       ==== TABLERO ENEMIGO (ATAQUE) ====\n");
+    printf("   1 2 3 4 5 6 7 8 9 10                 1 2 3 4 5 6 7 8 9 10\n");
+    for (int i = 0; i < MAX_FILAS; i++)
     {
-        // Índice y fila del tablero aliado
-        printf("%2d  ", i + 1);
-        for (j = 0; j < MAX_COLUMNAS; j++)
-            printf("%2c ", juego->tablero_aliado[i][j]);
-
-        // separación entre tableros
-        printf("   ");
-
-        // Índice y fila del tablero enemigo
-        printf("%2d  ", i + 1);
-        for (j = 0; j < MAX_COLUMNAS; j++)
-            printf("%2c ", juego->tablero_enemigo[i][j]);
-
+        printf("%2d ", i + 1);
+        for (int j = 0; j < MAX_COLUMNAS; j++)
+        {
+            printf("%c ", juego->tablero_aliado[i][j]);
+        }
+        printf("             %2d ", i + 1);
+        for (int j = 0; j < MAX_COLUMNAS; j++)
+        {
+            printf("%c ", juego->tablero_enemigo[i][j]);
+        }
         printf("\n");
     }
+    printf("\n");
 }
 
 bool validar_datos_barco(barco_t barco, char orientacion)
 {
     if (barco.largo < 2 || barco.largo > 5)
     {
+        printf("Largo del barco inválido: %d. Se esperaba un largo entre 2 y 5.\n", barco.largo);
         return false;
     }
     if (orientacion != NORTE && orientacion != SUR && orientacion != ESTE && orientacion != OESTE)
     {
+        printf("Orientación del barco inválida: %c. Se esperaba 'N', 'S', 'E' o 'O'.\n", orientacion);
         return false;
     }
     //Pos minima del tablero es (1,1)??
-    if (barco.posiciones[0].fila < 0 || barco.posiciones[0].fila >= MAX_FILAS || barco.posiciones[0].columna < 0 || barco.posiciones[0].columna >= MAX_COLUMNAS)
+    bool es_valida = barco.posiciones[0].fila < 1 || barco.posiciones[0].fila > MAX_FILAS || barco.posiciones[0].columna < 1 || barco.posiciones[0].columna > MAX_COLUMNAS;
+    if (es_valida)
     {
+        printf("Posición del barco inválida: (%d,%d). Se esperaba una posición dentro del tablero.\n", barco.posiciones[0].fila, barco.posiciones[0].columna);
         return false;
     }
     return true;
@@ -144,6 +127,7 @@ bool validar_cantidad_barcos(juego_t *juego, int cant_barcos_leidos)
     //NO VA CANT_BARCOS, VA Barcos_jugador[i] o i...
     if (cant_barcos_leidos != 5)
     {
+        printf("cant_barcos_leidos: %d\n", cant_barcos_leidos);
         printf("Cantidad de barcos inválida. Se esperaban 5 barcos.\n");
         return false;
     }
@@ -173,24 +157,33 @@ int guardar_barcos(char *ruta_barcos, juego_t *juego)
 {
     int i = 0;
     bool datos_validos = true;
+    int fila_temp = -1;
+    int columna_temp = -1;
     FILE *archivo_barcos = fopen(ruta_barcos, "r");
     if (archivo_barcos == NULL)
     {
         printf("Error al abrir el archivo.\n");
         return ERROR_ABRIR_ARCHIVO;
     }
-    int leidos = fscanf(archivo_barcos, FORMATO_LECTURA, &juego->barcos[i].posiciones[0].fila, &juego->barcos[i].posiciones[0].columna, &juego->orientaciones[i], &juego->barcos[i].largo);
-    while (leidos != EOF && datos_validos)
+    //Hacer var temporal de pos[0] porque no esta guardada todavia
+    int leidos = fscanf(archivo_barcos, FORMATO_LECTURA, &fila_temp, &columna_temp, &juego->orientaciones[i], &juego->barcos[i].largo);
+    juego->barcos[i].posiciones = malloc(sizeof(coordenada_t) * (size_t)juego->barcos[i].largo);
+    juego->barcos[i].posiciones[0].fila = fila_temp;
+    juego->barcos[i].posiciones[0].columna = columna_temp;
+    while (leidos != EOF && datos_validos && i < CANT_BARCOS - 1)
     {
         if (!validar_datos_barco(juego->barcos[i], juego->orientaciones[i]))
         {
             datos_validos = false;
         }
         i++;
-        leidos = fscanf(archivo_barcos, FORMATO_LECTURA, &juego->barcos[i].posiciones[0].fila, &juego->barcos[i].posiciones[0].columna, &juego->orientaciones[i], &juego->barcos[i].largo);
+        leidos = fscanf(archivo_barcos, FORMATO_LECTURA, &fila_temp, &columna_temp, &juego->orientaciones[i], &juego->barcos[i].largo);
+        juego->barcos[i].posiciones = malloc(sizeof(coordenada_t) * (size_t)juego->barcos[i].largo);
+        juego->barcos[i].posiciones[0].fila = fila_temp;
+        juego->barcos[i].posiciones[0].columna = columna_temp;
     }
     fclose(archivo_barcos);
-    if (!validar_cantidad_barcos(juego, i) || !datos_validos)
+    if (!validar_cantidad_barcos(juego, i + 1) || !datos_validos)
     {
         return ERROR_LECTURA;
     }
@@ -217,6 +210,7 @@ void liberar_memoria_barcos(juego_t *juego)
 
 // MODULARIZAR ESTA FUNCION
 // sacar el return de error de lectura dentro del while
+//hay error aca
 int cargar_barcos_en_tablero(juego_t *juego)
 {
     bool no_hay_superposicion = true;
@@ -224,66 +218,74 @@ int cargar_barcos_en_tablero(juego_t *juego)
 
     while (i < CANT_BARCOS && no_hay_superposicion)
     {
-        juego->tablero_aliado[juego->barcos[i].posiciones[0].fila][juego->barcos[i].posiciones[0].columna] = BARCO;
-        coordenada_t *posiciones = malloc(sizeof(coordenada_t) * (size_t)juego->barcos[i].largo);
-        if (!posiciones)
+        if (!juego->barcos[i].posiciones)
         {
             return ERROR_LECTURA;
         }
+
+        // convertir coordenada inicial (guardada como 1-based) a 0-based
+        int base_fila = juego->barcos[i].posiciones[0].fila - 1;
+        int base_col = juego->barcos[i].posiciones[0].columna - 1;
+        int largo = juego->barcos[i].largo;
+
         if (juego->orientaciones[i] == NORTE)
         {
-            for (int j = 1; j < juego->barcos[i].largo; j++)
+            for (int j = 0; j < largo; j++)
             {
-                if (juego->tablero_aliado[juego->barcos[i].posiciones[0].fila - j][juego->barcos[i].posiciones[0].columna] != AGUA)
+                int fila = base_fila - j;
+                int col = base_col;
+                juego->barcos[i].posiciones[j].fila = fila;
+                juego->barcos[i].posiciones[j].columna = col;
+                if (fila < 0 || fila >= MAX_FILAS || col < 0 || col >= MAX_COLUMNAS || juego->tablero_aliado[fila][col] != AGUA)
                 {
                     no_hay_superposicion = false;
                 }
-                else
-                {
-                    juego->tablero_aliado[juego->barcos[i].posiciones[0].fila - j][juego->barcos[i].posiciones[0].columna] = BARCO;
-                }
+                juego->tablero_aliado[fila][col] = BARCO;
             }
         }
         else if (juego->orientaciones[i] == SUR)
         {
-            for (int j = 1; j < juego->barcos[i].largo; j++)
+            for (int j = 0; j < largo; j++)
             {
-                if (juego->tablero_aliado[juego->barcos[i].posiciones[0].fila + j][juego->barcos[i].posiciones[0].columna] != AGUA)
+                int fila = base_fila + j;
+                int col = base_col;
+                juego->barcos[i].posiciones[j].fila = fila;
+                juego->barcos[i].posiciones[j].columna = col;
+                if (fila < 0 || fila >= MAX_FILAS || col < 0 || col >= MAX_COLUMNAS || juego->tablero_aliado[fila][col] != AGUA)
                 {
                     no_hay_superposicion = false;
                 }
-                else
-                {
-                    juego->tablero_aliado[juego->barcos[i].posiciones[0].fila + j][juego->barcos[i].posiciones[0].columna] = BARCO;
-                }
+                juego->tablero_aliado[fila][col] = BARCO;
             }
         }
         else if (juego->orientaciones[i] == ESTE)
         {
-            for (int j = 1; j < juego->barcos[i].largo; j++)
+            for (int j = 0; j < largo; j++)
             {
-                if (juego->tablero_aliado[juego->barcos[i].posiciones[0].fila][juego->barcos[i].posiciones[0].columna + j] != AGUA)
+                int fila = base_fila;
+                int col = base_col + j;
+                juego->barcos[i].posiciones[j].fila = fila;
+                juego->barcos[i].posiciones[j].columna = col;
+                if (fila < 0 || fila >= MAX_FILAS || col < 0 || col >= MAX_COLUMNAS || juego->tablero_aliado[fila][col] != AGUA)
                 {
                     no_hay_superposicion = false;
                 }
-                else
-                {
-                    juego->tablero_aliado[juego->barcos[i].posiciones[0].fila][juego->barcos[i].posiciones[0].columna + j] = BARCO;
-                }
+                juego->tablero_aliado[fila][col] = BARCO;
             }
         }
         else if (juego->orientaciones[i] == OESTE)
         {
-            for (int j = 1; j < juego->barcos[i].largo; j++)
+            for (int j = 0; j < largo; j++)
             {
-                if (juego->tablero_aliado[juego->barcos[i].posiciones[0].fila][juego->barcos[i].posiciones[0].columna - j] != AGUA)
+                int fila = base_fila;
+                int col = base_col - j;
+                juego->barcos[i].posiciones[j].fila = fila;
+                juego->barcos[i].posiciones[j].columna = col;
+                if (fila < 0 || fila >= MAX_FILAS || col < 0 || col >= MAX_COLUMNAS || juego->tablero_aliado[fila][col] != AGUA)
                 {
                     no_hay_superposicion = false;
                 }
-                else
-                {
-                    juego->tablero_aliado[juego->barcos[i].posiciones[0].fila][juego->barcos[i].posiciones[0].columna - j] = BARCO;
-                }
+                juego->tablero_aliado[fila][col] = BARCO;
             }
         }
         i++;
@@ -364,6 +366,7 @@ void recibir_disparo(juego_t *juego, oponente_t *oponente)
     
 }
 
+//POST: Devuelve 0 si el juego se sigue jugando, 1 si el jugador ganó, -1 si el oponente ganó.
 int estado_juego()
 {
     return 0;
@@ -388,25 +391,23 @@ void jugar_juego(juego_t *juego, oponente_t *oponente)
 }
 
 
-//POST: Devuelve 0 si el juego se sigue jugando, 1 si el jugador ganó, -1 si el oponente ganó.
-
-
 int main(int argc, char *argv[])
 {
     reporte_t reporte;
     juego_t juego;
     oponente_t *oponente;
-    imprimir_instrucciones();
     if (es_cantidad_argumentos_validos(argc))
     {
         
         inicializar_juego(&reporte, &juego);
         if (guardar_barcos(argv[1], &juego) != EXITO)
         {
+            printf("Error al guardar los barcos desde el archivo.\n");
             return ERROR_LECTURA;
         }
         if (cargar_barcos_en_tablero(&juego) != EXITO)
         {
+            printf("Error al cargar los barcos en el tablero.\n");
             liberar_memoria_barcos(&juego);
             return ERROR_LECTURA;
         }
