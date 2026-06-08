@@ -294,10 +294,8 @@ int cargar_barcos_en_tablero(juego_t *juego)
 
 void pedir_disparo(coordenada_t *disparo)
 {
-    printf("Ingrese la fila de su disparo: ");
-    scanf("%d", &disparo->fila);
-    printf("Ingrese la columna de su disparo: ");
-    scanf("%d", &disparo->columna);
+    printf("Ingrese la fila y columna de su disparo en formato fila;columna: ");
+    scanf("%d;%d", &disparo->fila, &disparo->columna);
 }
 
 bool coordenada_ya_disparada(juego_t juego, coordenada_t disparo)
@@ -476,9 +474,9 @@ void escribir_reporte(char *ruta_reporte, reporte_t reporte)
         return;
     }
     fprintf(archivo_reporte, "Balas aliadas acertadas: %d\n", reporte.balas_aliadas_acertadas);
-    fprintf(archivo_reporte, "Balas aliadas falladas: %d\n", reporte.balas_aliadas_falladas);
+    fprintf(archivo_reporte, "Balas aliadas erradas: %d\n", reporte.balas_aliadas_falladas);
     fprintf(archivo_reporte, "Balas enemigas acertadas: %d\n", reporte.balas_enemigas_acertadas);
-    fprintf(archivo_reporte, "Balas enemigas falladas: %d\n", reporte.balas_enemigas_falladas);
+    fprintf(archivo_reporte, "Balas enemigas erradas: %d\n", reporte.balas_enemigas_falladas);
     fprintf(archivo_reporte, "Barcos enemigos hundidos: %d\n", reporte.barcos_enemigos_hundidos);
     fprintf(archivo_reporte, "Barcos aliados sobrevivientes: %d\n", reporte.barcos_aliados_sobrevivientes);
     fclose(archivo_reporte);
