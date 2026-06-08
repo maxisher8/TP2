@@ -35,9 +35,9 @@ typedef struct juego
 typedef struct reporte
 {
     int balas_aliadas_acertadas;
-    int balas_aliadas_falladas;
+    int balas_aliadas_erradas;
     int balas_enemigas_acertadas;
-    int balas_enemigas_falladas;
+    int balas_enemigas_erradas;
     int barcos_enemigos_hundidos;
     int barcos_aliados_sobrevivientes;
 } reporte_t;
@@ -56,9 +56,9 @@ void inicializar_tablero(char tablero[MAX_FILAS][MAX_COLUMNAS])
 void inicializar_juego(reporte_t *reporte, juego_t *juego)
 {
     reporte->balas_aliadas_acertadas = 0;
-    reporte->balas_aliadas_falladas = 0;
+    reporte->balas_aliadas_erradas = 0;
     reporte->balas_enemigas_acertadas = 0;
-    reporte->balas_enemigas_falladas = 0;
+    reporte->balas_enemigas_erradas = 0;
     reporte->barcos_enemigos_hundidos = 0;
     reporte->barcos_aliados_sobrevivientes = CANT_BARCOS;
     inicializar_tablero(juego->tablero_aliado);
@@ -110,7 +110,6 @@ bool validar_datos_barco(barco_t barco, char orientacion)
         printf("Orientación del barco inválida: %c. Se esperaba 'N', 'S', 'E' o 'O'.\n", orientacion);
         return false;
     }
-    //Pos minima del tablero es (1,1)??
     bool es_valida = barco.posiciones[0].fila < 1 || barco.posiciones[0].fila > MAX_FILAS || barco.posiciones[0].columna < 1 || barco.posiciones[0].columna > MAX_COLUMNAS;
     if (es_valida)
     {
@@ -167,14 +166,13 @@ int guardar_barcos(char *ruta_barcos, juego_t *juego)
         printf("Error al abrir el archivo.\n");
         return ERROR_ABRIR_ARCHIVO;
     }
-    //Hacer var temporal de pos[0] porque no esta guardada todavia
     int leidos = fscanf(archivo_barcos, FORMATO_LECTURA, &fila_temp, &columna_temp, &juego->orientaciones[i], &juego->barcos[i].largo);
     juego->barcos[i].posiciones = malloc(sizeof(coordenada_t) * (size_t)juego->barcos[i].largo);
     juego->barcos[i].posiciones[0].fila = fila_temp;
     juego->barcos[i].posiciones[0].columna = columna_temp;
     while (leidos != EOF && datos_validos && i < CANT_BARCOS - 1)
     {
-        if (!validar_datos_barco(juego->barcos[i], juego->orientaciones[i]))
+        if(!validar_datos_barco(juego->barcos[i], juego->orientaciones[i]))
         {
             datos_validos = false;
         }
@@ -185,16 +183,17 @@ int guardar_barcos(char *ruta_barcos, juego_t *juego)
         juego->barcos[i].posiciones[0].columna = columna_temp;
     }
     fclose(archivo_barcos);
-    if (!validar_cantidad_barcos(juego, i + 1) || !datos_validos)
+    if(!validar_cantidad_barcos(juego, i + 1) || !datos_validos)
     {
         return ERROR_LECTURA;
     }
+    
     return EXITO;
 }
 
 
 
-bool validar_posiciones_barcos(juego_t *juego)
+bool validar_posiciones_barcos(juego_t juego)
 {
     return true;
 }
@@ -222,7 +221,6 @@ int cargar_barcos_en_tablero(juego_t *juego)
         {
             return ERROR_LECTURA;
         }
-        // convertir coordenada inicial a uno menos(porque la matriz se guarda con indices de 0 a 9)
         int base_fila = juego->barcos[i].posiciones[0].fila - 1;
         int base_col = juego->barcos[i].posiciones[0].columna - 1;
         int largo = juego->barcos[i].largo;
@@ -289,6 +287,10 @@ int cargar_barcos_en_tablero(juego_t *juego)
         }
         i++;
     }
+    if (!no_hay_superposicion)
+    {
+        return ERROR_LECTURA;
+    }
     return EXITO;
 }
 
@@ -338,7 +340,7 @@ void realizar_disparo(juego_t *juego, oponente_t *oponente, coordenada_t disparo
     {
         printf("Disparo al agua.\n");
         actualizar_tablero(juego->tablero_enemigo, disparo, AGUA);
-        reporte->balas_aliadas_falladas++;
+        reporte->balas_aliadas_erradas++;
     }
     else if (resultado == TOCADO)
     {
@@ -407,7 +409,7 @@ void recibir_disparo(juego_t *juego, oponente_t *oponente, reporte_t *reporte)
     {
         printf("El oponente disparó a (%d, %d) y disparó al agua.\n", disparo_oponente.fila + 1, disparo_oponente.columna + 1);
         juego->tablero_aliado[disparo_oponente.fila][disparo_oponente.columna] = AGUA;
-        reporte->balas_enemigas_falladas++;
+        reporte->balas_enemigas_erradas++;
     }
 }
 
@@ -474,9 +476,9 @@ void escribir_reporte(char *ruta_reporte, reporte_t reporte)
         return;
     }
     fprintf(archivo_reporte, "Balas aliadas acertadas: %d\n", reporte.balas_aliadas_acertadas);
-    fprintf(archivo_reporte, "Balas aliadas erradas: %d\n", reporte.balas_aliadas_falladas);
+    fprintf(archivo_reporte, "Balas aliadas erradas: %d\n", reporte.balas_aliadas_erradas);
     fprintf(archivo_reporte, "Balas enemigas acertadas: %d\n", reporte.balas_enemigas_acertadas);
-    fprintf(archivo_reporte, "Balas enemigas erradas: %d\n", reporte.balas_enemigas_falladas);
+    fprintf(archivo_reporte, "Balas enemigas erradas: %d\n", reporte.balas_enemigas_erradas);
     fprintf(archivo_reporte, "Barcos enemigos hundidos: %d\n", reporte.barcos_enemigos_hundidos);
     fprintf(archivo_reporte, "Barcos aliados sobrevivientes: %d\n", reporte.barcos_aliados_sobrevivientes);
     fclose(archivo_reporte);
