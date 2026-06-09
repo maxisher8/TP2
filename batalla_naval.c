@@ -72,7 +72,7 @@ bool es_cantidad_argumentos_validos(int argc)
 
 bool son_posiciones_iguales(coordenada_t pos1, coordenada_t pos2)
 {
-    return (pos1.fila == pos2.fila) && (pos1.columna == pos2.columna);
+    return ((pos1.fila == pos2.fila) && (pos1.columna == pos2.columna));
 }
 
 
@@ -125,11 +125,10 @@ bool validar_cantidad_barcos(juego_t *juego, int cant_barcos_leidos)
     int cant_largo_3 = 0;
     int cant_largo_4 = 0;
     int cant_largo_5 = 0;
-    //NO VA CANT_BARCOS, VA Barcos_jugador[i] o i...
-    if (cant_barcos_leidos != 5)
+    if (cant_barcos_leidos != CANT_BARCOS)
     {
         printf("cant_barcos_leidos: %d\n", cant_barcos_leidos);
-        printf("Cantidad de barcos inválida. Se esperaban 5 barcos.\n");
+        printf("Cantidad de barcos inválida. Se esperaban %d barcos.\n", CANT_BARCOS);
         return false;
     }
     for (int i = 0; i < CANT_BARCOS; i++)
@@ -394,10 +393,12 @@ bool es_hundido(juego_t *juego)
 void recibir_disparo(juego_t *juego, oponente_t *oponente, reporte_t *reporte)
 {
     coordenada_t disparo_oponente = oponente_realiza_disparo(oponente);
-    if(juego->tablero_aliado[disparo_oponente.fila][disparo_oponente.columna] == BARCO)
+    int fila = disparo_oponente.fila;
+    int col = disparo_oponente.columna;
+    if(juego->tablero_aliado[fila][col] == BARCO)
     {
-        printf("El oponente disparó a (%d, %d) y te tocó un barco.\n", disparo_oponente.fila + 1, disparo_oponente.columna + 1);
-        juego->tablero_aliado[disparo_oponente.fila][disparo_oponente.columna] = TOCADO;
+        printf("El oponente disparó a (%d, %d) y te tocó un barco.\n", fila + 1, col + 1);
+        juego->tablero_aliado[fila][col] = TOCADO;
         reporte->balas_enemigas_acertadas++;
         if(es_hundido(juego))
         {
@@ -405,10 +406,10 @@ void recibir_disparo(juego_t *juego, oponente_t *oponente, reporte_t *reporte)
             reporte->barcos_aliados_sobrevivientes--;
         }
     }
-    else
+    else if(juego->tablero_aliado[fila][col] == VACIO)
     {
-        printf("El oponente disparó a (%d, %d) y disparó al agua.\n", disparo_oponente.fila + 1, disparo_oponente.columna + 1);
-        juego->tablero_aliado[disparo_oponente.fila][disparo_oponente.columna] = AGUA;
+        printf("El oponente disparó a (%d, %d) y disparó al agua.\n", fila + 1, col + 1);
+        juego->tablero_aliado[fila][col] = AGUA;
         reporte->balas_enemigas_erradas++;
     }
 }
