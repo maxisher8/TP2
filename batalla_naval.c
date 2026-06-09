@@ -461,10 +461,13 @@ void jugar_juego(juego_t *juego, oponente_t *oponente, reporte_t *reporte)
     {
         realizar_disparo(juego, oponente, disparo, reporte);
         mostrar_tableros(juego);
-        printf("Turno del oponente...\n");
-        system("clear");
-        recibir_disparo(juego, oponente, reporte);
-        mostrar_tableros(juego);
+        if (estado_juego(*reporte) == 0)
+        {
+            printf("Turno del oponente...\n");
+            system("clear");
+            recibir_disparo(juego, oponente, reporte);
+            mostrar_tableros(juego);
+        }
     }
 }
 
