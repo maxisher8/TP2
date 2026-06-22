@@ -186,7 +186,8 @@ bool validar_cantidad_barcos(juego_t *juego, int cant_barcos_leidos)
     return ((cant_largo_2 == CANT_LARGO_2) && (cant_largo_3 == CANT_LARGO_3) && (cant_largo_4 == CANT_LARGO_4) && (cant_largo_5 == CANT_LARGO_5));
 }
 
-
+//PRE: Debe existir un archivo con formato válido de barcos y un juego inicializado.
+//POS: Carga los datos de los barcos desde el archivo y asigna memoria para sus posiciones.
 int guardar_barcos(char *ruta_barcos, juego_t *juego)
 {
     int i = 0;
@@ -207,7 +208,6 @@ int guardar_barcos(char *ruta_barcos, juego_t *juego)
         juego->orientaciones[i] = orientacion_temp;
         juego->barcos[i].largo = largo_temp;
         if((juego->barcos[i].largo > LARGO_MINIMO) || (juego->barcos[i].largo < LARGO_MAXIMO)){
-            // 2. RECIÉN ACÁ, sabiendo que largo_temp es válido y real, reservamos memoria
             juego->barcos[i].posiciones = malloc(sizeof(coordenada_t) * (size_t)juego->barcos[i].largo);
             if (!juego->barcos[i].posiciones)
             {
@@ -237,59 +237,6 @@ int guardar_barcos(char *ruta_barcos, juego_t *juego)
     }
     return EXITO;
 }
-
-//PRE: Debe existir un archivo con formato válido de barcos y un juego inicializado.
-//POS: Carga los datos de los barcos desde el archivo y asigna memoria para sus posiciones.
-/*int guardar_barcos_vieja(char *ruta_barcos, juego_t *juego)
-{
-    int i = 0;
-    bool datos_validos = true;
-    int fila_temp = INICIALIZACION_INVALIDA;
-    int columna_temp = INICIALIZACION_INVALIDA;
-    FILE *archivo_barcos = fopen(ruta_barcos, "r");
-    if (archivo_barcos == NULL)
-    {
-        printf("Error al abrir el archivo.\n");
-        return ERROR_ABRIR_ARCHIVO;
-    }
-    int leidos = fscanf(archivo_barcos, FORMATO_LECTURA, &fila_temp, &columna_temp, &juego->orientaciones[i], &juego->barcos[i].largo);
-    //CHEQUEAR SI LOS DATOS SON CORRECTOS ANTES DE HACER EL MALLOC
-    juego->barcos[i].posiciones = malloc(sizeof(coordenada_t) * (size_t)juego->barcos[i].largo);
-    if(!juego->barcos[i].posiciones)
-    {
-        printf("Error al asignar memoria para las posiciones del barco.\n");
-        fclose(archivo_barcos);
-        return ERROR_LECTURA;
-    }
-    juego->barcos[i].posiciones[0].fila = fila_temp;
-    juego->barcos[i].posiciones[0].columna = columna_temp;
-    while (leidos != EOF && datos_validos && i < CANT_BARCOS)
-    {
-        if (!validar_datos_barco(juego->barcos[i], juego->orientaciones[i]))
-        {
-            datos_validos = false;
-        }
-        i++;
-        leidos = fscanf(archivo_barcos, FORMATO_LECTURA, &fila_temp, &columna_temp, &juego->orientaciones[i], &juego->barcos[i].largo);
-        juego->barcos[i].posiciones = malloc(sizeof(coordenada_t) * (size_t)juego->barcos[i].largo);
-        if (!juego->barcos[i].posiciones)
-        {
-            printf("Error al asignar memoria para las posiciones del barco.\n");
-            datos_validos = false;
-        }
-        else{
-            juego->barcos[i].posiciones[0].fila = fila_temp;
-            juego->barcos[i].posiciones[0].columna = columna_temp;
-        }
-    }
-    fclose(archivo_barcos);
-    if (!validar_cantidad_barcos(juego, i + 1) || !datos_validos)
-    {
-        return ERROR_LECTURA;
-    }
-
-    return EXITO;
-}*/
 
 //PRE: Debe existir un juego con barcos cargados en memoria.
 //POS: Libera la memoria asignada a las posiciones de todos los barcos.
