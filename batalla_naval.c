@@ -58,6 +58,8 @@ typedef struct reporte
     int barcos_aliados_sobrevivientes;
 } reporte_t;
 
+//PRE: Debe existir un tablero
+//POS: Inicializa el tablero con el caracter VACIO en todas sus posiciones.
 void inicializar_tablero(char tablero[MAX_FILAS][MAX_COLUMNAS])
 {
     for (int i = 0; i < MAX_FILAS; i++)
@@ -69,6 +71,8 @@ void inicializar_tablero(char tablero[MAX_FILAS][MAX_COLUMNAS])
     }
 }
 
+//PRE: Debe existir un reporte y un juego.
+//POS: Inicializa el reporte y los tableros.
 void inicializar_juego(reporte_t *reporte, juego_t *juego)
 {
     reporte->balas_aliadas_acertadas = INICIALIZACION_VALIDA;
@@ -81,16 +85,22 @@ void inicializar_juego(reporte_t *reporte, juego_t *juego)
     inicializar_tablero(juego->tablero_enemigo);
 }
 
+//PRE: -
+//POS: Verifica si la cantidad de argumentos es válida.
 bool es_cantidad_argumentos_validos(int argc)
 {
     return (argc == CANT_ARGS);
 }
 
+//PRE: -
+//POS: Devuelve si las posiciones son iguales.
 bool son_posiciones_iguales(coordenada_t pos1, coordenada_t pos2)
 {
     return ((pos1.fila == pos2.fila) && (pos1.columna == pos2.columna));
 }
 
+//PRE: Juego debe estar inicializado
+//POS: Imprime el tablero aliado y el tablero enemigo.
 void mostrar_tableros(juego_t *juego)
 {
     printf("\n==== TU TABLERO (DEFENSA) ====       ==== TABLERO ENEMIGO (ATAQUE) ====\n");
@@ -112,19 +122,21 @@ void mostrar_tableros(juego_t *juego)
     printf("\n");
 }
 
+//PRE: Barco debe tener su largo y su posición inicial (fila y columna) definidos, y la orientación debe ser un caracter válido.
+//POS: Verifica si los datos del barco son válidos.
 bool validar_datos_barco(barco_t barco, char orientacion)
 {
-    if (barco.largo < LARGO_MINIMO || barco.largo > LARGO_MAXIMO)
+    if ((barco.largo < LARGO_MINIMO) || (barco.largo > LARGO_MAXIMO))
     {
         printf("Largo del barco inválido: %d. Se esperaba un largo entre %d y %d.\n", barco.largo, LARGO_MINIMO, LARGO_MAXIMO);
         return false;
     }
-    if (orientacion != NORTE && orientacion != SUR && orientacion != ESTE && orientacion != OESTE)
+    if ((orientacion != NORTE) && (orientacion != SUR) && (orientacion != ESTE) && (orientacion != OESTE))
     {
         printf("Orientación del barco inválida: %c. Se esperaba 'N', 'S', 'E' o 'O'.\n", orientacion);
         return false;
     }
-    bool es_valida = barco.posiciones[0].fila < MIN_FILAS || barco.posiciones[0].fila > MAX_FILAS || barco.posiciones[0].columna < MIN_COLUMNAS || barco.posiciones[0].columna > MAX_COLUMNAS;
+    bool es_valida = (barco.posiciones[0].fila < MIN_FILAS) || (barco.posiciones[0].fila > MAX_FILAS) || (barco.posiciones[0].columna < MIN_COLUMNAS) || (barco.posiciones[0].columna > MAX_COLUMNAS);
     if (es_valida)
     {
         printf("Posición del barco inválida: (%d,%d). Se esperaba una posición dentro del tablero.\n", barco.posiciones[0].fila, barco.posiciones[0].columna);
@@ -133,12 +145,14 @@ bool validar_datos_barco(barco_t barco, char orientacion)
     return true;
 }
 
+//PRE: Debe existir un juego y debe tener barcos cargados.
+//POS: Verifica que la cantidad de barcos y sus largos sean válidos.
 bool validar_cantidad_barcos(juego_t *juego, int cant_barcos_leidos)
 {
-    int cant_largo_2 = 0;
-    int cant_largo_3 = 0;
-    int cant_largo_4 = 0;
-    int cant_largo_5 = 0;
+    int cant_largo_2 = INICIALIZACION_VALIDA;
+    int cant_largo_3 = INICIALIZACION_VALIDA;
+    int cant_largo_4 = INICIALIZACION_VALIDA;
+    int cant_largo_5 = INICIALIZACION_VALIDA;
     if (cant_barcos_leidos != CANT_BARCOS)
     {
         printf("cant_barcos_leidos: %d\n", cant_barcos_leidos);
@@ -164,9 +178,11 @@ bool validar_cantidad_barcos(juego_t *juego, int cant_barcos_leidos)
             cant_largo_5++;
         }
     }
-    return (cant_largo_2 == CANT_LARGO_2 && cant_largo_3 == CANT_LARGO_3 && cant_largo_4 == CANT_LARGO_4 && cant_largo_5 == CANT_LARGO_5);
+    return ((cant_largo_2 == CANT_LARGO_2) && (cant_largo_3 == CANT_LARGO_3) && (cant_largo_4 == CANT_LARGO_4) && (cant_largo_5 == CANT_LARGO_5));
 }
 
+//PRE: Debe existir un archivo con formato válido de barcos y un juego inicializado.
+//POS: Carga los datos de los barcos desde el archivo y asigna memoria para sus posiciones.
 int guardar_barcos(char *ruta_barcos, juego_t *juego)
 {
     int i = 0;
@@ -180,6 +196,7 @@ int guardar_barcos(char *ruta_barcos, juego_t *juego)
         return ERROR_ABRIR_ARCHIVO;
     }
     int leidos = fscanf(archivo_barcos, FORMATO_LECTURA, &fila_temp, &columna_temp, &juego->orientaciones[i], &juego->barcos[i].largo);
+    //CHEQUEAR SI LOS DATOS SON CORRECTOS ANTES DE HACER EL MALLOC
     juego->barcos[i].posiciones = malloc(sizeof(coordenada_t) * (size_t)juego->barcos[i].largo);
     if(!juego->barcos[i].posiciones)
     {
@@ -189,7 +206,7 @@ int guardar_barcos(char *ruta_barcos, juego_t *juego)
     }
     juego->barcos[i].posiciones[0].fila = fila_temp;
     juego->barcos[i].posiciones[0].columna = columna_temp;
-    while (leidos != EOF && datos_validos && i < CANT_BARCOS - 1)
+    while (leidos != EOF && datos_validos && i < CANT_BARCOS)
     {
         if (!validar_datos_barco(juego->barcos[i], juego->orientaciones[i]))
         {
@@ -217,6 +234,8 @@ int guardar_barcos(char *ruta_barcos, juego_t *juego)
     return EXITO;
 }
 
+//PRE: Debe existir un juego con barcos cargados en memoria.
+//POS: Libera la memoria asignada a las posiciones de todos los barcos.
 void liberar_memoria_barcos(juego_t *juego)
 {
     for (int i = 0; i < CANT_BARCOS; i++)
@@ -228,7 +247,8 @@ void liberar_memoria_barcos(juego_t *juego)
     }
 }
 
-// MODULARIZAR ESTA FUNCION
+//PRE: Debe existir un juego con barcos inicializados y un tablero aliado vacío.
+//POS: Carga los barcos en el tablero aliado si la colocación es válida, devolviendo EXITO u ERROR_LECTURA.
 int cargar_barcos_en_tablero(juego_t *juego)
 {
     bool lectura_valida = true;
@@ -249,7 +269,7 @@ int cargar_barcos_en_tablero(juego_t *juego)
             if (juego->orientaciones[i] == NORTE)
             {
                 j = 0;
-                while (j < largo && lectura_valida)
+                while ((j < largo) && lectura_valida)
                 {
                     int fila = base_fila - j;
                     int col = base_col;
@@ -259,14 +279,17 @@ int cargar_barcos_en_tablero(juego_t *juego)
                     {
                         lectura_valida = false;
                     }
-                    juego->tablero_aliado[fila][col] = BARCO;
-                    j++;
+                    else
+                    {
+                        juego->tablero_aliado[fila][col] = BARCO;
+                        j++;
+                    }
                 }
             }
             else if (juego->orientaciones[i] == SUR)
             {
                 j = 0;
-                while (j < largo && lectura_valida)
+                while ((j < largo) && lectura_valida)
                 {
                     int fila = base_fila + j;
                     int col = base_col;
@@ -276,14 +299,18 @@ int cargar_barcos_en_tablero(juego_t *juego)
                     {
                         lectura_valida = false;
                     }
-                    juego->tablero_aliado[fila][col] = BARCO;
-                    j++;
+                    else
+                    {
+                        juego->tablero_aliado[fila][col] = BARCO;
+                        j++;
+                    }
+                    
                 }
             }
             else if (juego->orientaciones[i] == ESTE)
             {
                 j = 0;
-                while (j < largo && lectura_valida)
+                while ((j < largo) && lectura_valida)
                 {
                     int fila = base_fila;
                     int col = base_col + j;
@@ -293,14 +320,18 @@ int cargar_barcos_en_tablero(juego_t *juego)
                     {
                         lectura_valida = false;
                     }
-                    juego->tablero_aliado[fila][col] = BARCO;
-                    j++;
+                    else
+                    {
+                        juego->tablero_aliado[fila][col] = BARCO;
+                        j++;
+                    }
+                    
                 }
             }
             else if (juego->orientaciones[i] == OESTE)
             {
                 j = 0;
-                while (j < largo && lectura_valida)
+                while ((j < largo) && lectura_valida)
                 {
                     int fila = base_fila;
                     int col = base_col - j;
@@ -310,8 +341,12 @@ int cargar_barcos_en_tablero(juego_t *juego)
                     {
                         lectura_valida = false;
                     }
-                    juego->tablero_aliado[fila][col] = BARCO;
-                    j++;
+                    else
+                    {
+                        juego->tablero_aliado[fila][col] = BARCO;
+                        j++;
+                    }
+                    
                 }
             }
             i++;
@@ -324,18 +359,24 @@ int cargar_barcos_en_tablero(juego_t *juego)
     return EXITO;
 }
 
+//PRE: Debe existir un disparo inicializado.
+//POS: Lee las coordenadas del disparo desde la entrada estándar.
 void pedir_disparo(coordenada_t *disparo)
 {
     printf("Ingrese la fila y columna de su disparo en formato fila;columna: ");
     scanf("%d;%d", &disparo->fila, &disparo->columna);
 }
 
+//PRE: Debe existir un juego con tablero enemigo inicializado y un disparo válido.
+//POS: Verifica si la coordenada ya fue disparada (marcada como TOCADO, HUNDIDO o AGUA).
 bool coordenada_ya_disparada(juego_t juego, coordenada_t disparo)
 {
     char estado_casilla = juego.tablero_enemigo[disparo.fila - 1][disparo.columna - 1];
     return ((estado_casilla == TOCADO) || (estado_casilla == HUNDIDO) || (estado_casilla == AGUA));
 }
 
+//PRE: Debe existir un juego con tablero enemigo inicializado y una coordenada de disparo.
+//POS: Verifica que la coordenada esté dentro del tablero y no haya sido disparada anteriormente.
 bool es_disparo_valido(juego_t juego, coordenada_t disparo)
 {
     if ((disparo.fila >= MIN_FILAS) && (disparo.fila <= MAX_FILAS) && (disparo.columna >= MIN_COLUMNAS) && (disparo.columna <= MAX_COLUMNAS))
@@ -351,11 +392,15 @@ bool es_disparo_valido(juego_t juego, coordenada_t disparo)
     return false;
 }
 
+//PRE: Debe existir un tablero válido, una coordenada dentro del rango y un resultado válido.
+//POS: Actualiza la posición del tablero con el resultado del disparo.
 void actualizar_tablero(char tablero[MAX_FILAS][MAX_COLUMNAS], coordenada_t disparo, char resultado)
 {
     tablero[disparo.fila - 1][disparo.columna - 1] = resultado;
 }
 
+//PRE: Debe existir un juego, un oponente, una coordenada válida y un reporte inicializado.
+//POS: Procesa el disparo del jugador y actualiza el tablero enemigo y el reporte.
 void realizar_disparo(juego_t *juego, oponente_t *oponente, coordenada_t disparo, reporte_t *reporte)
 {
     char resultado = oponente_recibe_disparo(oponente, disparo);
@@ -380,6 +425,8 @@ void realizar_disparo(juego_t *juego, oponente_t *oponente, coordenada_t disparo
     }
 }
 
+//PRE: Debe existir un juego con barcos cargados y un tablero aliado con disparos procesados.
+//POS: Verifica si algún barco ha sido completamente tocado y lo marca como hundido.
 bool es_hundido(juego_t *juego)
 {
     bool barco_hundido = false;
@@ -414,6 +461,8 @@ bool es_hundido(juego_t *juego)
     return barco_hundido;
 }
 
+//PRE: Debe existir un juego, un oponente y un reporte inicializado.
+//POS: Procesa el disparo del oponente, actualiza el tablero aliado y el reporte.
 void recibir_disparo(juego_t *juego, oponente_t *oponente, reporte_t *reporte)
 {
     coordenada_t disparo_oponente = oponente_realiza_disparo(oponente);
@@ -438,6 +487,8 @@ void recibir_disparo(juego_t *juego, oponente_t *oponente, reporte_t *reporte)
     }
 }
 
+//PRE: Debe existir un reporte con datos válidos.
+//POS: Verifica si todos los barcos enemigos han sido hundidos.
 bool jugador_gano(reporte_t reporte)
 {
     if (reporte.barcos_enemigos_hundidos == CANT_BARCOS)
@@ -447,6 +498,8 @@ bool jugador_gano(reporte_t reporte)
     return false;
 }
 
+//PRE: Debe existir un reporte con datos válidos.
+//POS: Verifica si todos los barcos aliados han sido hundidos.
 bool oponente_gano(reporte_t reporte)
 {
     if (reporte.barcos_aliados_sobrevivientes == 0)
@@ -456,7 +509,8 @@ bool oponente_gano(reporte_t reporte)
     return false;
 }
 
-// POST: Devuelve 0 si el juego se sigue jugando, 1 si el jugador ganó, -1 si el oponente ganó.
+//PRE: Debe existir un reporte con datos válidos.
+//POS: Devuelve 0 si el juego se sigue jugando, 1 si el jugador ganó, -1 si el oponente ganó.
 int estado_juego(reporte_t reporte)
 {
     if (jugador_gano(reporte))
@@ -472,11 +526,13 @@ int estado_juego(reporte_t reporte)
     return SIGUE_JUGANDO;
 }
 
+//PRE: Debe existir un juego, un oponente y un reporte inicializados, con el juego en estado actual válido.
+//POS: Ejecuta un turno del jugador, procesa su disparo y el del oponente si el juego continúa.
 void jugar_juego(juego_t *juego, oponente_t *oponente, reporte_t *reporte)
 {
     coordenada_t disparo;
-    disparo.fila = -1;
-    disparo.columna = -1;
+    disparo.fila = INICIALIZACION_INVALIDA;
+    disparo.columna = INICIALIZACION_INVALIDA;
     pedir_disparo(&disparo);
     printf("Realizando disparo a (%d, %d)...\n", disparo.fila, disparo.columna);
     if (es_disparo_valido(*juego, disparo))
@@ -493,6 +549,8 @@ void jugar_juego(juego_t *juego, oponente_t *oponente, reporte_t *reporte)
     }
 }
 
+//PRE: Debe existir una ruta válida y un reporte con datos completados.
+//POS: Escribe el reporte con el resumen de la partida.
 void escribir_reporte(char *ruta_reporte, reporte_t reporte)
 {
     FILE *archivo_reporte = fopen(ruta_reporte, "w");
@@ -522,6 +580,7 @@ int main(int argc, char *argv[])
         if (guardar_barcos(argv[1], &juego) != EXITO)
         {
             printf("Error al guardar los barcos desde el archivo.\n");
+            liberar_memoria_barcos(&juego);
             return ERROR_LECTURA;
         }
         if (cargar_barcos_en_tablero(&juego) != EXITO)
